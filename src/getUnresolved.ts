@@ -18,10 +18,15 @@ export default async function(req, res, slack, token) {
     for (const message of history.messages) {
       if (message.reactions) {
         let emojis = [];
+        let reactCount = 0;
         for (const reaction of message.reactions) {
           emojis.push(reaction.name);
+          reactCount += reaction.count;
         }
         if (emojis.includes("x") && !emojis.includes("white_check_mark")) {
+          const reacts = emojis.map(x => {
+            return { type: "mrkdwn", text: `:${x}:` };
+          });
           const question = message.text;
           const poster = message.user;
           const messageTs = message.ts;
@@ -37,19 +42,34 @@ export default async function(req, res, slack, token) {
           });
           const link = linkInfo.ok ? linkInfo.permalink : "No Link";
           // append all this data to output blocks
-          blocks.push({
-            type: "section",
-            fields: [
-              {
-                type: "mrkdwn",
-                text: `${name}*\n${question}`
-              },
-              {
-                type: "mrkdwn",
-                text: `*Time*\n<${link}|Visit>`
-              }
-            ]
-          });
+          blocks.unshift(
+            {
+              type: "section",
+              fields: [
+                {
+                  type: "mrkdwn",
+                  text: `*${name}*\n${question}`
+                },
+                {
+                  type: "mrkdwn",
+                  text: `<!date^${Math.floor(
+                    messageTs
+                  )}^{date} at {time}|Unable to get Timestamp>\n<${link}|Visit>`
+                }
+              ]
+            },
+            {
+              type: "context",
+              elements: [
+                ...reacts,
+                {
+                  type: "plain_text",
+                  emoji: true,
+                  text: `${reactCount} React${reactCount != 1 ? "s" : ""}`
+                }
+              ]
+            }
+          );
         }
       }
     }
@@ -67,14 +87,14 @@ export default async function(req, res, slack, token) {
 
   res
     .json({
-      text: `Returned unresolved questions`,
+      text: `Returned unresolved posts`,
       response_type: "ephemeral",
       blocks: [
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: "*Unresolved Posts _(Newest to Oldest)_:*"
+            text: "*Unresolved Posts _(Oldest to Newest)_:*"
           }
         },
         {
