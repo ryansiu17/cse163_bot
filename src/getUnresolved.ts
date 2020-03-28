@@ -1,6 +1,8 @@
 export default async function(req, res, slack, token) {
+  res.status(200).end();
   // get channel id from req body
   const { body } = req;
+  const responseUrl = body.response_url;
 
   // get history of channel
   const history = await slack.conversations.history({
@@ -23,26 +25,30 @@ export default async function(req, res, slack, token) {
           emojis.push(reaction.name);
           reactCount += reaction.count;
         }
+
         if (emojis.includes("x") && !emojis.includes("white_check_mark")) {
           const reacts = emojis.map(x => {
             return { type: "mrkdwn", text: `:${x}:` };
           });
           const question = message.text;
-          const poster = message.user;
+          const userId = message.user;
           const messageTs = message.ts;
           // get user's name
           const userInfo = await slack.users.info({
-            user: poster
+            user: userId
           });
+
           const name = userInfo.ok ? userInfo.user.real_name : "No Name";
           // get link to the chat
           const linkInfo = await slack.chat.getPermalink({
             channel: body.channel_id,
             message_ts: messageTs
           });
+
           const link = linkInfo.ok ? linkInfo.permalink : "No Link";
           // append all this data to output blocks
           blocks.unshift(
+            // Header w/ name and question + date and visit button
             {
               type: "section",
               fields: [
@@ -58,6 +64,7 @@ export default async function(req, res, slack, token) {
                 }
               ]
             },
+            // reaction list
             {
               type: "context",
               elements: [
@@ -68,27 +75,28 @@ export default async function(req, res, slack, token) {
                   text: `${reactCount} React${reactCount != 1 ? "s" : ""}`
                 }
               ]
+            },
+            // divider :)
+            {
+              type: "divider"
             }
           );
         }
       }
     }
-  }
 
-  if (blocks.length === 0) {
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `No Unresolved Posts!`
-      }
-    });
-  }
+    if (blocks.length === 0) {
+      blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `No Unresolved Posts!`
+        }
+      });
+    }
 
-  res
-    .json({
+    const output = {
       text: `Returned unresolved posts`,
-      response_type: "ephemeral",
       blocks: [
         {
           type: "section",
@@ -102,8 +110,49 @@ export default async function(req, res, slack, token) {
         },
         ...blocks
       ]
-    })
-    .status(200);
+    };
+    console.log([...blocks].length);
+    if ([...blocks].length > 48) {
+      slack.chat.postEphemeral({
+        text: "Unresolved Posts (Full)",
+        channel: body.channel_id,
+        user: body.user_id,
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text:
+                "*Unresolved Posts _(Oldest to Newest)_*:\n>*OVER 16 UNRESOLVED POSTS, REQUERY AFTER RESOLVING A FEW*"
+            }
+          },
+          {
+            type: "divider"
+          },
+          ...blocks
+        ].slice(0, 48)
+      });
+    } else {
+      slack.chat.postEphemeral({
+        text: "Unresolved Posts (Spliced)",
+        channel: body.channel_id,
+        user: body.user_id,
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: "*Unresolved Posts _(Oldest to Newest)_:*"
+            }
+          },
+          {
+            type: "divider"
+          },
+          ...blocks
+        ]
+      });
+    }
+  }
 }
 
 // in a loop

@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 async function default_1(req, res, slack, token) {
+    res.status(200).end();
     // get channel id from req body
     const { body } = req;
+    const responseUrl = body.response_url;
     // get history of channel
     const history = await slack.conversations.history({
         channel: body.channel_id,
@@ -27,11 +29,11 @@ async function default_1(req, res, slack, token) {
                         return { type: "mrkdwn", text: `:${x}:` };
                     });
                     const question = message.text;
-                    const poster = message.user;
+                    const userId = message.user;
                     const messageTs = message.ts;
                     // get user's name
                     const userInfo = await slack.users.info({
-                        user: poster
+                        user: userId
                     });
                     const name = userInfo.ok ? userInfo.user.real_name : "No Name";
                     // get link to the chat
@@ -41,7 +43,9 @@ async function default_1(req, res, slack, token) {
                     });
                     const link = linkInfo.ok ? linkInfo.permalink : "No Link";
                     // append all this data to output blocks
-                    blocks.unshift({
+                    blocks.unshift(
+                    // Header w/ name and question + date and visit button
+                    {
                         type: "section",
                         fields: [
                             {
@@ -53,7 +57,9 @@ async function default_1(req, res, slack, token) {
                                 text: `<!date^${Math.floor(messageTs)}^{date} at {time}|Unable to get Timestamp>\n<${link}|Visit>`
                             }
                         ]
-                    }, {
+                    }, 
+                    // reaction list
+                    {
                         type: "context",
                         elements: [
                             ...reacts,
@@ -63,39 +69,81 @@ async function default_1(req, res, slack, token) {
                                 text: `${reactCount} React${reactCount != 1 ? "s" : ""}`
                             }
                         ]
+                    }, 
+                    // divider :)
+                    {
+                        type: "divider"
                     });
                 }
             }
         }
-    }
-    if (blocks.length === 0) {
-        blocks.push({
-            type: "section",
-            text: {
-                type: "mrkdwn",
-                text: `No Unresolved Posts!`
-            }
-        });
-    }
-    res
-        .json({
-        text: `Returned unresolved posts`,
-        response_type: "ephemeral",
-        blocks: [
-            {
+        if (blocks.length === 0) {
+            blocks.push({
                 type: "section",
                 text: {
                     type: "mrkdwn",
-                    text: "*Unresolved Posts _(Oldest to Newest)_:*"
+                    text: `No Unresolved Posts!`
                 }
-            },
-            {
-                type: "divider"
-            },
-            ...blocks
-        ]
-    })
-        .status(200);
+            });
+        }
+        const output = {
+            text: `Returned unresolved posts`,
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: "*Unresolved Posts _(Oldest to Newest)_:*"
+                    }
+                },
+                {
+                    type: "divider"
+                },
+                ...blocks
+            ]
+        };
+        console.log([...blocks].length);
+        if ([...blocks].length > 48) {
+            slack.chat.postEphemeral({
+                text: "Unresolved Posts (Full)",
+                channel: body.channel_id,
+                user: body.user_id,
+                blocks: [
+                    {
+                        type: "section",
+                        text: {
+                            type: "mrkdwn",
+                            text: "*Unresolved Posts _(Oldest to Newest)_*:\n>*OVER 16 UNRESOLVED POSTS, REQUERY AFTER RESOLVING A FEW*"
+                        }
+                    },
+                    {
+                        type: "divider"
+                    },
+                    ...blocks
+                ].slice(0, 48)
+            });
+        }
+        else {
+            slack.chat.postEphemeral({
+                text: "Unresolved Posts (Spliced)",
+                channel: body.channel_id,
+                user: body.user_id,
+                blocks: [
+                    {
+                        type: "section",
+                        text: {
+                            type: "mrkdwn",
+                            text: "*Unresolved Posts _(Oldest to Newest)_:*"
+                        }
+                    },
+                    {
+                        type: "divider"
+                    },
+                    ...blocks
+                ]
+            });
+        }
+    }
 }
 exports.default = default_1;
 // in a loop

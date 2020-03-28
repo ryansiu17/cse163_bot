@@ -1,8 +1,8 @@
 require("dotenv").config();
 // imports
-const { WebClient } = require("@slack/web-api");
-const express = require("express");
-const bodyParser = require("body-parser");
+import { WebClient } from "@slack/web-api";
+import express from "express";
+import bodyParser from "body-parser";
 
 // constants
 const port = 4000;

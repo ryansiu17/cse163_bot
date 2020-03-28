@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv").config();
 // imports
-const { WebClient } = require("@slack/web-api");
-const express = require("express");
-const bodyParser = require("body-parser");
+const web_api_1 = require("@slack/web-api");
+const express_1 = __importDefault(require("express"));
+const body_parser_1 = __importDefault(require("body-parser"));
 // constants
 const port = 4000;
 const slackToken = process.env.SLACK_TOKEN;
@@ -19,10 +19,10 @@ if (!slackToken) {
     throw new Error("No Slack token provided");
 }
 // make app and webclient
-const slack = new WebClient(slackToken);
-const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+const slack = new web_api_1.WebClient(slackToken);
+const app = express_1.default();
+app.use(body_parser_1.default.json());
+app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.post(`/getUnresolved`, (req, res) => {
     getUnresolved_1.default(req, res, slack, userToken);
 });
