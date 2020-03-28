@@ -1,5 +1,20 @@
 export default async function(req, res, slack, token) {
-  res.status(200).end();
+  res
+    .json({
+      text: `Gathering Unresolved Posts:`,
+      response_type: "ephemeral",
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Gathering Unresolved Posts*\nPlease Wait... :smile: \n`
+          }
+        }
+      ]
+    })
+    .status(200)
+    .end();
   // get channel id from req body
   const { body } = req;
   const responseUrl = body.response_url;
@@ -111,47 +126,43 @@ export default async function(req, res, slack, token) {
         ...blocks
       ]
     };
-    console.log([...blocks].length);
+    let outputBlocks = [];
     if ([...blocks].length > 48) {
-      slack.chat.postEphemeral({
-        text: "Unresolved Posts (Full)",
-        channel: body.channel_id,
-        user: body.user_id,
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text:
-                "*Unresolved Posts _(Oldest to Newest)_*:\n>*OVER 16 UNRESOLVED POSTS, REQUERY AFTER RESOLVING A FEW*"
-            }
-          },
-          {
-            type: "divider"
-          },
-          ...blocks
-        ].slice(0, 48)
-      });
+      outputBlocks = [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text:
+              "*Unresolved Posts _(Oldest to Newest)_*:\n>*OVER 16 UNRESOLVED POSTS, REQUERY AFTER RESOLVING A FEW*"
+          }
+        },
+        {
+          type: "divider"
+        },
+        ...blocks
+      ].slice(0, 47);
     } else {
-      slack.chat.postEphemeral({
-        text: "Unresolved Posts (Spliced)",
-        channel: body.channel_id,
-        user: body.user_id,
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: "*Unresolved Posts _(Oldest to Newest)_:*"
-            }
-          },
-          {
-            type: "divider"
-          },
-          ...blocks
-        ]
-      });
+      outputBlocks = [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: "*Unresolved Posts _(Oldest to Newest)_:*"
+          }
+        },
+        {
+          type: "divider"
+        },
+        ...blocks
+      ];
     }
+    slack.chat.postEphemeral({
+      text: "Unresolved Posts (Spliced)",
+      channel: body.channel_id,
+      user: body.user_id,
+      blocks: outputBlocks
+    });
   }
 }
 
