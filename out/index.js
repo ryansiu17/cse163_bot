@@ -8,16 +8,12 @@ require("dotenv").config();
 const web_api_1 = require("@slack/web-api");
 const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
+const getUnresolved_1 = __importDefault(require("./getUnresolved"));
 // constants
 const port = 4000;
 const slackToken = process.env.SLACK_TOKEN;
 const userToken = process.env.USER_TOKEN;
 //const endpoint = "http://27c5b6da.ngrok.io";
-const getUnresolved_1 = __importDefault(require("./getUnresolved"));
-// make sure we have token
-if (!slackToken) {
-    throw new Error("No Slack token provided");
-}
 // make app and webclient
 const slack = new web_api_1.WebClient(slackToken);
 const app = express_1.default();
