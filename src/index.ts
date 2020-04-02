@@ -3,8 +3,6 @@ require("dotenv").config();
 import { WebClient } from "@slack/web-api";
 import express from "express";
 import bodyParser from "body-parser";
-import * as crypto from "crypto";
-import * as tsscmp from "tsscmp";
 
 import getUnresolved from "./getUnresolved";
 

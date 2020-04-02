@@ -1,20 +1,64 @@
 export default async function(req, res, slack, token) {
-  const unresolved_emoji = "x";
-  const resolved_emoji = "white_check_mark";
+  console.log("--------------------"); // 20 of these for dividing console logs
+  let unresolved_emoji = "x"; // should be x by default
+  let resolved_emoji = "white_check_mark"; // should be white_check_mark by default
   const { body } = req;
 
-  // make sure bot is actually in the channel
+  // Check that the slash command was called correctly (valid parameters)
+  //TODO: maybe check if these emojis exist???
+  const params = body.text.split(" ").map(p => p.replace(/:/g, "")); // remove colons
 
+  if (params.length > 2) {
+    // more than 2 params?? Not allowed!
+    res
+      .json({
+        text: `Bot Not in Channel:`,
+        response_type: "ephemeral",
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Invalid parameters!*\nShould be /unresolved <unresolved emoji> <resolved emoji>`
+            }
+          }
+        ]
+      })
+      .status(200)
+      .end();
+    console.log("Exited - invalid parameters");
+    console.log("--------------------"); // 20 of these for dividing console logs
+  } else {
+    if (params.length === 1) {
+      // one string passed (might be "" <- which means default)
+      if (params[0] !== "") {
+        // NOT default, so look for this certain emoji
+        unresolved_emoji = params[0];
+        resolved_emoji = "";
+      }
+    } else {
+      [unresolved_emoji, resolved_emoji] = params;
+    }
+  }
+
+  console.log("/unresolved called with passed parameters: " + params);
+
+  // make sure bot is actually in the channel
   //    get all members in channel
+  console.log(
+    `Checking bot in channel ${body.channel_id} (${body.channel_name})`
+  );
   const channel_members = await slack.conversations.members({
     channel: body.channel_id
   });
+
   //    get bot user_id
   const bot_data = await slack.auth.test();
 
   // Send OK so the slack API doesn't yell at me
   if (channel_members.ok) {
     if (!channel_members.members.includes(bot_data.user_id)) {
+      console.log("Bot not in channel");
       res
         .json({
           text: `Bot Not in Channel:`,
@@ -31,7 +75,16 @@ export default async function(req, res, slack, token) {
         })
         .status(200)
         .end();
+
+      console.log("Exited - bot not in channel");
+      console.log("--------------------"); // 20 of these for dividing console logs
     } else {
+      console.log("Bot in channel");
+      console.log(
+        `Searching for posts with ${unresolved_emoji} ${
+          resolved_emoji ? "and without " + resolved_emoji : "."
+        }`
+      );
       res
         .json({
           text: `Gathering Unresolved Posts:`,
@@ -49,6 +102,7 @@ export default async function(req, res, slack, token) {
         .status(200)
         .end();
 
+      console.log("Getting channel history");
       // Actual important code
       // get history (all messages) of channel
       const history = await slack.conversations.history({
@@ -93,7 +147,9 @@ export default async function(req, res, slack, token) {
             }
           }
         }
+        console.log("Channel history received");
 
+        console.log("Getting user data (names)");
         // for each unformatted obj, get the username of the user_id who posted
         const result_user_data = unformatted.map(({ user_id }) => {
           return slack.users.info({
@@ -101,6 +157,7 @@ export default async function(req, res, slack, token) {
           });
         });
 
+        console.log("Getting post link data");
         // for each unformatted obj, get the permalink to that message
         const result_link_data = unformatted.map(({ message_ts }) => {
           return slack.chat.getPermalink({
@@ -200,6 +257,7 @@ export default async function(req, res, slack, token) {
           user: body.user_id,
           blocks: outputBlocks
         });
+        console.log("--------------------"); // 20 of these for dividing console logs
       }
     }
   }
