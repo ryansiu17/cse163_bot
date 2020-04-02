@@ -2,7 +2,7 @@
 Created to perform menial tasks in cse163's slack workspace.
 
 ## Running
-- Make sure you have the correct environment variables set before running. You should have `SLACK_TOKEN` and `USER_TOKEN` set to the slack OAuth Access Token and Bot User Access Token, respectively.
+- Make sure you have the correct environment variables set before running. You should have `SLACK_TOKEN` and `USER_TOKEN` set to the slack OAuth Access Token and Bot User Access Token, respectively. Use dotenv.
 - Run `npm install` to get the required libraries, then run `npm start` to start up the server.
 
 
