@@ -13,7 +13,6 @@ const getUnresolved_1 = __importDefault(require("./getUnresolved"));
 const port = 4000;
 const slackToken = process.env.SLACK_TOKEN;
 const userToken = process.env.USER_TOKEN;
-//const endpoint = "http://27c5b6da.ngrok.io";
 // make app and webclient
 const slack = new web_api_1.WebClient(slackToken);
 const app = express_1.default();
@@ -22,4 +21,4 @@ app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.post(`/getUnresolved`, (req, res) => {
     getUnresolved_1.default(req, res, slack, userToken);
 });
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.listen(port, () => console.log(`CSE163 Bot listening on port ${port}!`));

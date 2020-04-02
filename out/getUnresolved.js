@@ -11,6 +11,7 @@ async function default_1(req, res, slack, token) {
     });
     //    get bot user_id
     const bot_data = await slack.auth.test();
+    // Send OK so the slack API doesn't yell at me
     if (channel_members.ok) {
         if (!channel_members.members.includes(bot_data.user_id)) {
             res
@@ -47,6 +48,7 @@ async function default_1(req, res, slack, token) {
             })
                 .status(200)
                 .end();
+            // Actual important code
             // get history (all messages) of channel
             const history = await slack.conversations.history({
                 channel: body.channel_id,
