@@ -7,10 +7,12 @@ async function default_1(req, res, slack, token) {
     const { body } = req;
     // Check that the slash command was called correctly (valid parameters)
     //TODO: maybe check if these emojis exist???
-    const params = body.text.split(" ").map(p => p.replace(/:/g, "")); // remove colons
+    const params = body.text.split(" ").map((p) => p.replace(/:/g, "")); // remove colons
     if (params.length > 2) {
         // more than 2 params?? Not allowed!
-        res
+        console.log("Exited - invalid parameters");
+        console.log("--------------------"); // 20 of these for dividing console logs
+        return res
             .json({
             text: `Bot Not in Channel:`,
             response_type: "ephemeral",
@@ -19,15 +21,13 @@ async function default_1(req, res, slack, token) {
                     type: "section",
                     text: {
                         type: "mrkdwn",
-                        text: `*Invalid parameters!*\nShould be /unresolved <unresolved emoji> <resolved emoji>`
-                    }
-                }
-            ]
+                        text: `*Invalid parameters!*\nShould be /unresolved <unresolved emoji> <resolved emoji>`,
+                    },
+                },
+            ],
         })
             .status(200)
             .end();
-        console.log("Exited - invalid parameters");
-        console.log("--------------------"); // 20 of these for dividing console logs
     }
     else {
         if (params.length === 1) {
@@ -47,15 +47,16 @@ async function default_1(req, res, slack, token) {
     //    get all members in channel
     console.log(`Checking bot in channel ${body.channel_id} (${body.channel_name})`);
     const channel_members = await slack.conversations.members({
-        channel: body.channel_id
+        channel: body.channel_id,
     });
     //    get bot user_id
     const bot_data = await slack.auth.test();
     // Send OK so the slack API doesn't yell at me
     if (channel_members.ok) {
         if (!channel_members.members.includes(bot_data.user_id)) {
-            console.log("Bot not in channel");
-            res
+            console.log("Exited - bot not in channel");
+            console.log("--------------------"); // 20 of these for dividing console logs
+            return res
                 .json({
                 text: `Bot Not in Channel:`,
                 response_type: "ephemeral",
@@ -64,15 +65,13 @@ async function default_1(req, res, slack, token) {
                         type: "section",
                         text: {
                             type: "mrkdwn",
-                            text: `*Please make sure I'm added to this channel!*`
-                        }
-                    }
-                ]
+                            text: `*Please make sure I'm added to this channel!*`,
+                        },
+                    },
+                ],
             })
                 .status(200)
                 .end();
-            console.log("Exited - bot not in channel");
-            console.log("--------------------"); // 20 of these for dividing console logs
         }
         else {
             console.log("Bot in channel");
@@ -86,10 +85,10 @@ async function default_1(req, res, slack, token) {
                         type: "section",
                         text: {
                             type: "mrkdwn",
-                            text: `*Gathering Unresolved Posts*\nPlease Wait...`
-                        }
-                    }
-                ]
+                            text: `*Gathering Unresolved Posts*\nPlease Wait...`,
+                        },
+                    },
+                ],
             })
                 .status(200)
                 .end();
@@ -98,7 +97,7 @@ async function default_1(req, res, slack, token) {
             // get history (all messages) of channel
             const history = await slack.conversations.history({
                 channel: body.channel_id,
-                token: token
+                token: token,
             });
             // array of unformatted results (no username or permalink yet)
             let unformatted = [];
@@ -116,7 +115,7 @@ async function default_1(req, res, slack, token) {
                         }
                         if (emojis.includes(unresolved_emoji) &&
                             !emojis.includes(resolved_emoji)) {
-                            const reacts = emojis.map(x => {
+                            const reacts = emojis.map((x) => {
                                 return { type: "mrkdwn", text: `:${x}:` };
                             });
                             //  add this message to the unformatted list
@@ -125,7 +124,7 @@ async function default_1(req, res, slack, token) {
                                 user_id: message.user,
                                 message_ts: message.ts,
                                 reacts: reacts,
-                                react_count: react_count
+                                react_count: react_count,
                             });
                         }
                     }
@@ -135,7 +134,7 @@ async function default_1(req, res, slack, token) {
                 // for each unformatted obj, get the username of the user_id who posted
                 const result_user_data = unformatted.map(({ user_id }) => {
                     return slack.users.info({
-                        user: user_id
+                        user: user_id,
                     });
                 });
                 console.log("Getting post link data");
@@ -143,7 +142,7 @@ async function default_1(req, res, slack, token) {
                 const result_link_data = unformatted.map(({ message_ts }) => {
                     return slack.chat.getPermalink({
                         channel: body.channel_id,
-                        message_ts: message_ts
+                        message_ts: message_ts,
                     });
                 });
                 // resolve all those requests
@@ -165,13 +164,13 @@ async function default_1(req, res, slack, token) {
                         fields: [
                             {
                                 type: "mrkdwn",
-                                text: `*${name}*\n${unformatted[i].question}`
+                                text: `*${name}*\n${unformatted[i].question}`,
                             },
                             {
                                 type: "mrkdwn",
-                                text: `<!date^${Math.floor(unformatted[i].message_ts)}^{date} at {time}|Unable to get Timestamp>\n<${link}|Visit>`
-                            }
-                        ]
+                                text: `<!date^${Math.floor(unformatted[i].message_ts)}^{date} at {time}|Unable to get Timestamp>\n<${link}|Visit>`,
+                            },
+                        ],
                     }, 
                     // reaction list
                     {
@@ -181,13 +180,13 @@ async function default_1(req, res, slack, token) {
                             {
                                 type: "plain_text",
                                 emoji: true,
-                                text: `${unformatted[i].react_count} React${unformatted[i].react_count != 1 ? "s" : ""}`
-                            }
-                        ]
+                                text: `${unformatted[i].react_count} React${unformatted[i].react_count != 1 ? "s" : ""}`,
+                            },
+                        ],
                     }, 
                     // divider :^)
                     {
-                        type: "divider"
+                        type: "divider",
                     });
                 }
                 const result_length = blocks.length;
@@ -196,8 +195,8 @@ async function default_1(req, res, slack, token) {
                         type: "section",
                         text: {
                             type: "mrkdwn",
-                            text: `No Unresolved Posts!`
-                        }
+                            text: `No Unresolved Posts!`,
+                        },
                     });
                 }
                 console.log(`Returning list of length ${result_length / 3}`);
@@ -206,23 +205,23 @@ async function default_1(req, res, slack, token) {
                         type: "section",
                         text: {
                             type: "mrkdwn",
-                            text: `*Unresolved Posts _(Oldest to Newest)_*\nReturned *${result_length /
-                                3}* total posts. ${result_length === 45
+                            text: `*Unresolved Posts _(Oldest to Newest)_*\nReturned *${result_length / 3}* total posts. ${result_length === 45
                                 ? "\n:warning: OVER 15 UNRESOLVED POSTS, PLEASE RESOLVE SOME AND REQUERY :warning:"
-                                : ""}`
-                        }
+                                : ""}`,
+                        },
                     },
                     {
-                        type: "divider"
+                        type: "divider",
                     },
-                    ...blocks
+                    ...blocks,
                 ];
-                slack.chat.postEphemeral({
+                const final_post = await slack.chat.postEphemeral({
                     text: "Unresolved Posts (Spliced)",
                     channel: body.channel_id,
                     user: body.user_id,
-                    blocks: outputBlocks
+                    blocks: outputBlocks,
                 });
+                console.log(final_post);
                 console.log("--------------------"); // 20 of these for dividing console logs
             }
         }
