@@ -7,6 +7,5 @@ Created to perform menial tasks in cse163's slack workspace.
 
 
 ## Commands
-- `/unresolved`
--- params: `/unresolved <unresolved emoji> <resolved emoji>`
--- returns a list of unresolved issues, which are defined as having a certain emoji corresponding to "unresolved" and _not_ having an emoji corresponding to "resolved". By default these are :x: for unresolved and :white_check_mark: for resolved.
+- ### unresolved `/unresolved <unresolved emoji> <resolved emoji>`
+Returns a list of unresolved issues, which are defined as having a certain emoji corresponding to "unresolved" and _not_ having an emoji corresponding to "resolved". By default these are :x: for unresolved and :white_check_mark: for resolved.
