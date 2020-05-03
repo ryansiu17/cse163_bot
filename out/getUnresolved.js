@@ -4,6 +4,7 @@ async function default_1(req, res, slack, token) {
     console.log("--------------------"); // 20 of these for dividing console logs
     let unresolved_emoji = "x"; // should be x by default
     let resolved_emoji = "white_check_mark"; // should be white_check_mark by default
+    const max_msg_length = 350;
     const { body } = req;
     // Check that the slash command was called correctly (valid parameters)
     //TODO: maybe check if these emojis exist???
@@ -11,7 +12,7 @@ async function default_1(req, res, slack, token) {
     if (params.length > 2) {
         // more than 2 params?? Not allowed!
         console.log("Exited - invalid parameters");
-        console.log("--------------------"); // 20 of these for dividing console logs
+        console.log("--------------------"); // 20 of these bad boys for dividing console logs
         return res
             .json({
             text: `Bot Not in Channel:`,
@@ -118,9 +119,14 @@ async function default_1(req, res, slack, token) {
                             const reacts = emojis.map((x) => {
                                 return { type: "mrkdwn", text: `:${x}:` };
                             });
+                            // truncate message if over 550 char
+                            const str = message.text;
+                            const truncated_text = str.length > max_msg_length
+                                ? str.substr(0, max_msg_length - 1) + ". . ."
+                                : str;
                             //  add this message to the unformatted list
                             unformatted.push({
-                                question: message.text,
+                                question: truncated_text,
                                 user_id: message.user,
                                 message_ts: message.ts,
                                 reacts: reacts,
@@ -215,13 +221,17 @@ async function default_1(req, res, slack, token) {
                     },
                     ...blocks,
                 ];
+                console.log(JSON.stringify({
+                    channel: body.channel_id,
+                    user: body.user_id,
+                    blocks: outputBlocks,
+                }));
                 const final_post = await slack.chat.postEphemeral({
                     text: "Unresolved Posts (Spliced)",
                     channel: body.channel_id,
                     user: body.user_id,
                     blocks: outputBlocks,
                 });
-                console.log(final_post);
                 console.log("--------------------"); // 20 of these for dividing console logs
             }
         }
